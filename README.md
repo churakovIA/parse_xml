@@ -8,5 +8,6 @@
 
 - Файл с исходными данными - src\main\resources\payload.xml
 - Задания выполнены в виде unit тестов в классе PayloadProcessorTest.java
+- Парсинг xml выполнен 2-мя способами (Stax, XPath)
 - Для задания 3 используется СУБД HSQLDB (in-memory)
 - Работа с базой данных осуществляется с помощью библиотеки [Jdbi](http://jdbi.org/)

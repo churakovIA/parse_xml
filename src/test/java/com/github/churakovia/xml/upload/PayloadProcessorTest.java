@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import com.github.churakovia.persist.DBIProvider;
 import com.github.churakovia.persist.dao.DocTypeDao;
 import com.github.churakovia.persist.model.DocType;
+import com.github.churakovia.xml.util.XPathProcessor;
 import com.google.common.base.Charsets;
 import com.google.common.io.CharStreams;
 import com.google.common.io.Resources;
@@ -16,8 +17,12 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.IntStream;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
 import org.junit.jupiter.api.Test;
 import org.skife.jdbi.v2.Handle;
+import org.w3c.dom.NodeList;
 
 class PayloadProcessorTest {
 
@@ -34,6 +39,20 @@ class PayloadProcessorTest {
   }
 
   @Test
+  void parseDocTypesByXPath() throws Exception {
+    try (InputStream is = getResource("payload.xml")) {
+
+      Set<String> docTypes = PayloadProcessor.parseDocTypesByXPath(is);
+
+      assertNotNull(docTypes);
+      assertEquals(9, docTypes.size());
+
+      System.out.println("\nВиды документов (XPath):\n");
+      docTypes.forEach(System.out::println);
+    }
+  }
+
+  @Test
   void getAttributes() throws Exception {
     Map<String, String> attributes = PayloadProcessor.getAttributes(getResource("payload.xml"));
 
@@ -42,6 +61,19 @@ class PayloadProcessorTest {
 
     System.out.println("\nАтрибуты для par step=\"1\" name=\"ГРАЖДАНСТВО\":");
     attributes.forEach((key, value) -> System.out.printf("%s:%s\n", key, value));
+  }
+
+  @Test
+  void getAttributesByXPath() throws Exception {
+    try (InputStream is = getResource("payload.xml")) {
+      Map<String, String> attributes = PayloadProcessor.getAttributesByXPath(is);
+
+      assertNotNull(attributes);
+      assertEquals(17, attributes.size());
+
+      System.out.println("\nАтрибуты для par step=\"1\" name=\"ГРАЖДАНСТВО\" (XPath):\n");
+      attributes.forEach((key, value) -> System.out.printf("%s:%s\n", key, value));
+    }
   }
 
   @Test

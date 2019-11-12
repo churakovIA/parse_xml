@@ -1,15 +1,25 @@
 package com.github.churakovia.xml.upload;
 
 import com.github.churakovia.xml.util.StaxStreamProcessor;
+import com.github.churakovia.xml.util.XPathProcessor;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.io.Resources;
+import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamReader;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 public class PayloadProcessor {
 
@@ -27,6 +37,16 @@ public class PayloadProcessor {
       }
     }
     return docTypes;
+  }
+
+  public static Set<String> parseDocTypesByXPath(InputStream is) {
+    XPathProcessor processor = new XPathProcessor(is);
+    XPathExpression expression = XPathProcessor
+        .getExpression("/order/services/serv/pars/par[@name='ВИД_ДОК']/par_list/@value");
+    NodeList nodes = processor.evaluate(expression, XPathConstants.NODESET);
+
+    return IntStream.range(0, nodes.getLength()).mapToObj(i -> nodes.item(i).getNodeValue())
+        .collect(Collectors.toCollection(TreeSet::new));
   }
 
   public static Map<String, String> getAttributes(InputStream is) throws Exception {
@@ -47,7 +67,13 @@ public class PayloadProcessor {
     return attributes;
   }
 
-  public static void uploadDocTypes(InputStream is) {
+  public static Map<String, String> getAttributesByXPath(InputStream is) {
+    XPathProcessor processor = new XPathProcessor(is);
+    XPathExpression expression = XPathProcessor
+        .getExpression("/order/services/serv/pars/par[@step='1'][@name='ВИД_ДОК']/@*");
+    NodeList nodes = processor.evaluate(expression, XPathConstants.NODESET);
 
+    return IntStream.range(0, nodes.getLength()).mapToObj(nodes::item)
+        .collect(Collectors.toMap(Node::getNodeName, Node::getNodeValue));
   }
 }
