@@ -11,9 +11,10 @@ import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 import org.w3c.dom.Document;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-public class XPathProcessor {
+abstract public class XPathProcessor {
 
   private static final DocumentBuilderFactory DOCUMENT_FACTORY = DocumentBuilderFactory
       .newInstance();
@@ -31,13 +32,51 @@ public class XPathProcessor {
     }
   }
 
-  private final Document doc;
+  public static XPathProcessor createSAX(InputStream is) {
+    return new ProcessorSAX(is);
+  }
 
-  public XPathProcessor(InputStream is) {
-    try {
-      doc = DOCUMENT_BUILDER.parse(is);
-    } catch (SAXException | IOException e) {
-      throw new IllegalArgumentException(e);
+  public static XPathProcessor createDOM(InputStream is) {
+    return new ProcessorDOM(is);
+  }
+
+  private static class ProcessorSAX extends XPathProcessor {
+
+    private final InputSource inputSource;
+
+    public ProcessorSAX(InputStream is) {
+      this.inputSource = new InputSource(is);
+    }
+
+    @Override
+    public <T> T evaluate(XPathExpression expression, QName type) {
+      try {
+        return (T) expression.evaluate(inputSource, type);
+      } catch (XPathExpressionException e) {
+        throw new IllegalArgumentException(e);
+      }
+    }
+  }
+
+  private static class ProcessorDOM extends XPathProcessor {
+
+    private final Document doc;
+
+    ProcessorDOM(InputStream is) {
+      try {
+        this.doc = DOCUMENT_BUILDER.parse(is);
+      } catch (SAXException | IOException e) {
+        throw new IllegalArgumentException(e);
+      }
+    }
+
+    @Override
+    public <T> T evaluate(XPathExpression expression, QName type) {
+      try {
+        return (T) expression.evaluate(doc, type);
+      } catch (XPathExpressionException e) {
+        throw new IllegalArgumentException(e);
+      }
     }
   }
 
@@ -49,11 +88,5 @@ public class XPathProcessor {
     }
   }
 
-  public <T> T evaluate(XPathExpression expression, QName type) {
-    try {
-      return (T) expression.evaluate(doc, type);
-    } catch (XPathExpressionException e) {
-      throw new IllegalArgumentException(e);
-    }
-  }
+  abstract public <T> T evaluate(XPathExpression expression, QName type);
 }
